@@ -1,5 +1,5 @@
 def main():
-    print("Sistema Distribuidora Andina saca")
+    print("Sistema Distribuidora Andina sac")
 
 
 if __name__ == "__main__":
