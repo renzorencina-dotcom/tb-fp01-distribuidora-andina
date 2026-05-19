@@ -1,67 +1,99 @@
 from models.cliente import Cliente
-from utils.csv_manager import cargar_clientes, guardar_cliente, guardar_clientes
-from utils.validaciones import validar_ruc_cliente
+from utils.csv_manager import (
+    agregar_fila_csv,
+    buscar_por_campo,
+    eliminar_fila_csv,
+    leer_csv,
+)
+from utils.validaciones import ruc_solo_numeros, telefono_solo_numeros, texto_no_vacio
+
+
+RUTA_CLIENTES = "data/clientes.csv"
+CAMPOS_CLIENTE = ["ruc", "razon_social", "telefono", "direccion"]
+
+
+def convertir_fila_a_cliente(fila):
+    return Cliente(
+        fila["ruc"],
+        fila["razon_social"],
+        fila["telefono"],
+        fila["direccion"],
+    )
 
 
 def listar_clientes():
-    # Devuelve todos los clientes registrados sin mostrarlos en pantalla.
-    return cargar_clientes()
+    return [convertir_fila_a_cliente(fila) for fila in leer_csv(RUTA_CLIENTES)]
 
 
-def existe_ruc(ruc, clientes=None):
-    # Permite validar si un RUC ya esta registrado; se puede reutilizar una lista ya cargada.
-    if clientes is None:
-        clientes = cargar_clientes()
+def validar_datos_cliente(ruc, razon_social, telefono, direccion):
+    if not texto_no_vacio(ruc):
+        return False, "El RUC no puede estar vacío."
 
-    for cliente in clientes:
-        if str(cliente.id_cliente) == str(ruc):
-            return True
+    if not ruc_solo_numeros(ruc):
+        return False, "El RUC debe contener solo números."
 
-    return False
+    if not texto_no_vacio(razon_social):
+        return False, "La razón social no puede estar vacía."
+
+    if not texto_no_vacio(telefono):
+        return False, "El teléfono no puede estar vacío."
+
+    if not telefono_solo_numeros(telefono):
+        return False, "El teléfono debe contener solo números."
+
+    if not texto_no_vacio(direccion):
+        return False, "La dirección no puede estar vacía."
+
+    return True, ""
 
 
-def registrar_cliente(ruc, razon_social):
-    # Valida el RUC antes de crear y guardar el cliente.
-    clientes = cargar_clientes()
-    es_valido, mensaje = validar_ruc_cliente(ruc, clientes)
+def registrar_cliente(ruc, razon_social, telefono, direccion):
+    es_valido, mensaje = validar_datos_cliente(ruc, razon_social, telefono, direccion)
 
     if not es_valido:
-        # Devuelve el error para que la interfaz decida como mostrarlo.
         return False, None, mensaje
 
-    cliente = Cliente(ruc, razon_social)
-    guardar_cliente(cliente)
-    # Devuelve exito y el cliente creado, sin imprimir mensajes desde services.
-    return True, cliente, ""
+    if buscar_por_campo(RUTA_CLIENTES, "ruc", ruc) is not None:
+        return False, None, "Ya existe un cliente registrado con ese RUC."
+
+    fila = {
+        "ruc": ruc,
+        "razon_social": razon_social,
+        "telefono": telefono,
+        "direccion": direccion,
+    }
+    agregar_fila_csv(RUTA_CLIENTES, fila, CAMPOS_CLIENTE)
+    return True, convertir_fila_a_cliente(fila), "Cliente registrado correctamente."
 
 
 def buscar_cliente_por_ruc(ruc):
-    # Busca un cliente especifico por RUC y devuelve None si no existe.
-    clientes = cargar_clientes()
+    fila = buscar_por_campo(RUTA_CLIENTES, "ruc", ruc)
 
-    for cliente in clientes:
-        if str(cliente.id_cliente) == str(ruc):
-            return cliente
+    if fila is None:
+        return None
 
-    return None
+    return convertir_fila_a_cliente(fila)
 
 
-def borrar_cliente(ruc):
-    # Para borrar, se reconstruye la lista excluyendo al cliente con el RUC indicado.
-    clientes = cargar_clientes()
-    clientes_actualizados = []
-    cliente_eliminado = None
+def consultar_cliente(ruc):
+    if not texto_no_vacio(ruc):
+        return False, None, "El RUC no puede estar vacío."
 
-    for cliente in clientes:
-        if str(cliente.id_cliente) == str(ruc):
-            cliente_eliminado = cliente
-        else:
-            clientes_actualizados.append(cliente)
+    cliente = buscar_cliente_por_ruc(ruc)
 
-    if cliente_eliminado is None:
-        # La interfaz usara este resultado para mostrar "Cliente no encontrado".
-        return False, None
+    if cliente is None:
+        return False, None, "Cliente no encontrado."
 
-    # Guarda la lista actualizada para reemplazar el contenido anterior del CSV.
-    guardar_clientes(clientes_actualizados)
-    return True, cliente_eliminado
+    return True, cliente, "Cliente encontrado."
+
+
+def eliminar_cliente(ruc):
+    if not texto_no_vacio(ruc):
+        return False, None, "El RUC no puede estar vacío."
+
+    fila_eliminada = eliminar_fila_csv(RUTA_CLIENTES, "ruc", ruc, CAMPOS_CLIENTE)
+
+    if fila_eliminada is None:
+        return False, None, "Cliente no encontrado."
+
+    return True, convertir_fila_a_cliente(fila_eliminada), "Cliente eliminado correctamente."
