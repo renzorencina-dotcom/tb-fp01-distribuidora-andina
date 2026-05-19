@@ -1,111 +1,124 @@
-from models.pedido import Pedido
-from models.producto import Producto
-from services.cliente_service import (
-    borrar_cliente,
-    buscar_cliente_por_ruc,
-    listar_clientes,
-    registrar_cliente,
-)
+def mostrar_bienvenida():
+    print("Bienvenido al Sistema Distribuidora Andina")
 
 
-def pedir_ruc():
-    # Toda lectura desde teclado pertenece a la capa de interfaz.
-    return input("Ingrese el RUC del cliente: ")
+def mostrar_menu_principal():
+    print("\nMenú principal")
+    print("1. Manejar pedidos")
+    print("2. Manejar stock")
+    print("3. Manejar clientes")
+    print("4. Reportes")
+    print("5. Salir")
 
 
-def pedir_razon_social():
-    return input("Ingrese el nombre o razón social del cliente: ")
+def mostrar_menu_pedidos():
+    print("\nManejar pedidos")
+    print("1. Registrar nuevo pedido")
+    print("2. Cancelar un pedido")
+    print("3. Manejar estado de los pedidos")
+    print("4. Volver al menú principal")
 
 
-def mostrar_clientes(clientes):
-    # Presenta los clientes que services devuelve como datos.
-    print("\nClientes registrados:")
-    for cliente in clientes:
-        print(f"{cliente.id_cliente}. {cliente.nombre}")
+def mostrar_menu_stock():
+    print("\nManejar stock")
+    print("1. Registrar productos en stock")
+    print("2. Eliminar productos del stock")
+    print("3. Actualizar cantidad de producto en stock")
+    print("4. Consultar producto")
+    print("5. Volver al menú principal")
 
 
-def realizar_pedido(cliente):
-    # Si no hay cliente seleccionado o registrado, no se puede generar el pedido.
-    if cliente is None:
-        return
-
-    # Producto temporal para mantener el flujo de pedido funcionando en consola.
-    producto = Producto(1, "Manzana", 100, 2.5)
-    pedido = Pedido(1, cliente, producto, 20)
-
-    print("\nResumen del pedido:")
-    print(pedido)
-    print(producto)
+def mostrar_menu_clientes():
+    print("\nManejar clientes")
+    print("1. Consultar clientes")
+    print("2. Registrar clientes")
+    print("3. Eliminar clientes")
+    print("4. Volver al menú principal")
 
 
-def registrar_cliente_desde_consola():
-    # Pide datos al usuario y llama al servicio para validar y guardar.
+def mostrar_menu_reportes():
+    print("\nReportes")
+    print("1. Reporte general de pedidos")
+    print("2. Reporte de pedidos por estado")
+    print("3. Reporte de productos con bajo stock")
+    print("4. Reporte de productos más solicitados")
+    print("5. Reporte de clientes con pedidos en curso")
+    print("6. Volver al menú principal")
+
+
+def mostrar_funcionalidad_pendiente():
+    print("\nFuncionalidad pendiente de implementación.")
+
+
+def manejar_pedidos():
     while True:
-        ruc = pedir_ruc()
-        razon_social = pedir_razon_social()
-        fue_registrado, cliente, mensaje = registrar_cliente(ruc, razon_social)
+        mostrar_menu_pedidos()
+        opcion = input("Seleccione una opción: ")
 
-        if fue_registrado:
-            print("Cliente registrado correctamente.")
-            return cliente
-
-        # El mensaje viene desde la validacion, pero se muestra solo en la interfaz.
-        print(mensaje)
-
-
-def seleccionar_cliente_desde_consola():
-    # Obtiene los clientes desde services y maneja la seleccion por consola.
-    clientes = listar_clientes()
-
-    if len(clientes) == 0:
-        print("No hay clientes registrados.")
-        return None
-
-    mostrar_clientes(clientes)
-    ruc = pedir_ruc()
-    cliente = buscar_cliente_por_ruc(ruc)
-
-    if cliente is None:
-        print("Cliente no encontrado.")
-        return None
-
-    return cliente
+        if opcion in ("1", "2", "3"):
+            mostrar_funcionalidad_pendiente()
+        elif opcion == "4":
+            break
+        else:
+            print("\nOpción no válida. Intente nuevamente.")
 
 
-def eliminar_cliente_desde_consola():
-    # Pide el RUC y deja que services determine si se pudo eliminar.
-    ruc = pedir_ruc()
-    fue_eliminado, cliente = borrar_cliente(ruc)
+def manejar_stock():
+    while True:
+        mostrar_menu_stock()
+        opcion = input("Seleccione una opción: ")
 
-    if not fue_eliminado:
-        print("Cliente no encontrado.")
-        return None
+        if opcion in ("1", "2", "3", "4"):
+            mostrar_funcionalidad_pendiente()
+        elif opcion == "5":
+            break
+        else:
+            print("\nOpción no válida. Intente nuevamente.")
 
-    print("Cliente eliminado correctamente.")
-    return cliente
+
+def manejar_clientes():
+    while True:
+        mostrar_menu_clientes()
+        opcion = input("Seleccione una opción: ")
+
+        if opcion in ("1", "2", "3"):
+            mostrar_funcionalidad_pendiente()
+        elif opcion == "4":
+            break
+        else:
+            print("\nOpción no válida. Intente nuevamente.")
 
 
-def ejecutar_consola():
-    # Menu principal de la aplicacion en modo consola.
-    print("Sistema Distribuidora Andina")
+def manejar_reportes():
+    while True:
+        mostrar_menu_reportes()
+        opcion = input("Seleccione una opción: ")
 
-    print("\nSeleccione una opción:")
-    print("1. Registrar cliente nuevo")
-    print("2. Seleccionar cliente existente")
-    print("3. Borrar cliente")
-    print("4. Salir")
+        if opcion in ("1", "2", "3", "4", "5"):
+            mostrar_funcionalidad_pendiente()
+        elif opcion == "6":
+            break
+        else:
+            print("\nOpción no válida. Intente nuevamente.")
 
-    opcion = input("Opción: ")
 
-    if opcion == "1":
-        cliente = registrar_cliente_desde_consola()
-        realizar_pedido(cliente)
-    elif opcion == "2":
-        cliente = seleccionar_cliente_desde_consola()
-        realizar_pedido(cliente)
-    elif opcion == "3":
-        eliminar_cliente_desde_consola()
-    elif opcion == "4":
-        print("Saliendo del sistema.")
-    else:
-        print("Opción no válida.")
+def iniciar_consola():
+    mostrar_bienvenida()
+
+    while True:
+        mostrar_menu_principal()
+        opcion = input("Seleccione una opción: ")
+
+        if opcion == "1":
+            manejar_pedidos()
+        elif opcion == "2":
+            manejar_stock()
+        elif opcion == "3":
+            manejar_clientes()
+        elif opcion == "4":
+            manejar_reportes()
+        elif opcion == "5":
+            print("\nSaliendo del sistema.")
+            break
+        else:
+            print("\nOpción no válida. Intente nuevamente.")
