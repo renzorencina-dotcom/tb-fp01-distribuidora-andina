@@ -37,3 +37,8 @@ Desktop.ini
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Runtime CSV data
+data/*.csv
+!data/ejemplos/
+!data/ejemplos/*.csv
