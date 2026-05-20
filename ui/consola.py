@@ -140,10 +140,12 @@ def mostrar_operacion_cancelada():
 
 
 def entrada_cancelada(valor):
+    """Detecta el comando usado para cancelar operaciones de consola."""
     return valor.strip().lower() == "cancelar"
 
 
 def pedir_dato_cliente(mensaje):
+    """Pide un dato de cliente y permite cancelar escribiendo "cancelar"."""
     valor = input(mensaje)
 
     if entrada_cancelada(valor):
@@ -153,6 +155,7 @@ def pedir_dato_cliente(mensaje):
 
 
 def pedir_dato_stock(mensaje):
+    """Pide un dato de stock y permite cancelar escribiendo "cancelar"."""
     valor = input(mensaje)
 
     if entrada_cancelada(valor):
@@ -162,6 +165,9 @@ def pedir_dato_stock(mensaje):
 
 
 def pedir_ruc_cliente(mensaje):
+    """Solicita un RUC válido hasta recibirlo o hasta que se cancele."""
+    # Este ciclo evita cancelar la operación por errores de digitación; solo
+    # termina cuando el RUC cumple la regla o el usuario escribe "cancelar".
     while True:
         ruc = pedir_dato_cliente(mensaje)
 
@@ -175,6 +181,7 @@ def pedir_ruc_cliente(mensaje):
 
 
 def pedir_tipo_producto():
+    """Solicita el tipo de producto aceptando solo perecible o abarrote."""
     while True:
         tipo = pedir_dato_stock("Ingrese el tipo de producto (perecible/abarrote): ")
 
@@ -188,6 +195,7 @@ def pedir_tipo_producto():
 
 
 def pedir_id_producto_registro(tipo):
+    """Solicita un ID de producto compatible con el tipo seleccionado."""
     while True:
         id_producto = pedir_dato_stock("Ingrese el ID del producto: ")
 
@@ -201,6 +209,7 @@ def pedir_id_producto_registro(tipo):
 
 
 def pedir_id_producto_busqueda(mensaje):
+    """Solicita un ID de producto con prefijo válido para operaciones de búsqueda."""
     while True:
         id_producto = pedir_dato_stock(mensaje)
 
@@ -216,6 +225,7 @@ def pedir_id_producto_busqueda(mensaje):
 
 
 def pedir_producto_existente(mensaje):
+    """Pide un ID y repite la solicitud hasta encontrar el producto o cancelar."""
     while True:
         id_producto = pedir_id_producto_busqueda(mensaje)
 
@@ -288,6 +298,7 @@ def pedir_confirmacion(mensaje):
 
 
 def pedir_codigo_pedido():
+    """Solicita un código nuevo de pedido de 4 dígitos y no repetido."""
     while True:
         codigo_pedido = pedir_dato_stock("Ingrese el código de pedido (4 dígitos): ")
 
@@ -310,6 +321,9 @@ def pedir_codigo_pedido():
 
 
 def pedir_codigo_pedido_existente():
+    """Solicita un código de pedido existente o permite cancelar la operación."""
+    # Los errores de formato o búsqueda no cancelan el flujo; el usuario puede
+    # seguir intentando hasta escribir "cancelar".
     while True:
         codigo_pedido = pedir_dato_stock("\nIngrese el código del pedido: ")
 
@@ -334,6 +348,7 @@ def pedir_codigo_pedido_existente():
 
 
 def pedir_cliente_existente_para_pedido() -> Cliente | None:
+    """Busca un cliente registrado por RUC para iniciar un pedido."""
     while True:
         ruc = pedir_ruc_cliente("Ingrese el RUC del cliente: ")
 
@@ -349,6 +364,7 @@ def pedir_cliente_existente_para_pedido() -> Cliente | None:
 
 
 def registrar_cliente_desde_pedido() -> Cliente | None:
+    """Registra un cliente durante el flujo de creación de pedido."""
     print("\nRegistro de cliente para pedido")
     print('Escriba "cancelar" para volver al menú Registrar nuevo pedido.')
 
@@ -404,6 +420,7 @@ def registrar_cliente_desde_pedido() -> Cliente | None:
 
 
 def guardar_pedido(cliente: Cliente, detalle_pedido):
+    """Guarda cabecera y detalle del pedido después de la confirmación."""
     codigo_pedido = pedir_codigo_pedido()
 
     if codigo_pedido is None:
@@ -433,6 +450,7 @@ def guardar_pedido(cliente: Cliente, detalle_pedido):
 
 
 def pedir_producto_para_pedido():
+    """Solicita productos para el pedido validando existencia y disponibilidad."""
     while True:
         id_producto = input("Ingrese el ID del producto: ").strip()
 
@@ -462,6 +480,7 @@ def pedir_producto_para_pedido():
 
 
 def pedir_cantidad_producto_pedido(producto):
+    """Solicita una cantidad compatible con el producto y su stock disponible."""
     while True:
         cantidad = pedir_dato_stock("Ingrese la cantidad solicitada: ")
 
@@ -486,10 +505,15 @@ def pedir_cantidad_producto_pedido(producto):
 
 
 def registrar_productos_del_pedido():
+    """Construye la lista temporal de productos que formarán parte del pedido."""
+    # detalle_pedido existe solo durante el registro; recién se guarda en CSV
+    # cuando el usuario confirma la orden completa.
     detalle_pedido = []
     print('\nIngrese productos del pedido. Escriba "Pedido terminado" para finalizar.')
     print('Escriba "cancelar" para cancelar todo el registro del pedido.')
 
+    # El ciclo permite agregar varios productos al mismo pedido sin regresar al
+    # menú entre cada línea de detalle.
     while True:
         accion, producto = pedir_producto_para_pedido()
 
@@ -510,6 +534,8 @@ def registrar_productos_del_pedido():
             mostrar_operacion_cancelada()
             return None
 
+        # Cada producto solicitado se modela como DetallePedido para calcular
+        # subtotal y luego persistirlo en detalle_pedidos.csv.
         detalle = DetallePedido(
             "",
             producto.id_producto,
@@ -522,6 +548,7 @@ def registrar_productos_del_pedido():
 
 
 def mostrar_resumen_pedido(detalle_pedido):
+    """Muestra los productos seleccionados y el total antes de confirmar."""
     total_general = 0
 
     print("\nResumen del pedido")
@@ -545,6 +572,7 @@ def mostrar_pedido(pedido):
 
 
 def registrar_pedido_para_cliente(cliente: Cliente):
+    """Completa el registro de productos para un cliente ya definido."""
     detalle_pedido = registrar_productos_del_pedido()
 
     if detalle_pedido is None:
@@ -586,6 +614,9 @@ def interfaz_pedido_cliente_nuevo():
 
 
 def interfaz_registrar_nuevo_pedido():
+    """Muestra el submenú para registrar pedidos de clientes nuevos o existentes."""
+    # El submenú permanece activo hasta que el usuario elige volver al menú de
+    # pedidos.
     while True:
         mostrar_menu_registrar_pedido()
         opcion = input("Seleccione una opción: ")
@@ -601,6 +632,7 @@ def interfaz_registrar_nuevo_pedido():
 
 
 def interfaz_cancelar_pedido():
+    """Permite marcar un pedido existente como cancelado."""
     print("\nCancelar un pedido")
     print('Escriba "cancelar" para volver al menú Manejar pedidos.')
 
@@ -719,6 +751,7 @@ def interfaz_actualizar_estado_pedido():
 
 
 def manejar_estado_pedidos():
+    """Gestiona el submenú de consulta y actualización de estados de pedidos."""
     while True:
         mostrar_menu_estado_pedidos()
         opcion = input("Seleccione una opción: ")
@@ -734,6 +767,7 @@ def manejar_estado_pedidos():
 
 
 def mostrar_cliente(cliente: Cliente):
+    """Muestra los datos principales de un cliente en consola."""
     print(f"RUC: {cliente.ruc}")
     print(f"Razón social: {cliente.razon_social}")
     print(f"Teléfono: {cliente.telefono}")
@@ -1025,6 +1059,9 @@ def interfaz_consultar_producto():
 
 
 def manejar_pedidos():
+    """Mantiene activo el módulo de pedidos y deriva a sus submenús."""
+    # El while conserva el módulo abierto hasta que el usuario elige volver al
+    # menú principal.
     while True:
         mostrar_menu_pedidos()
         opcion = input("Seleccione una opción: ")
@@ -1042,6 +1079,9 @@ def manejar_pedidos():
 
 
 def manejar_stock():
+    """Mantiene activo el módulo de stock y ejecuta sus operaciones."""
+    # El menú se repite para permitir varias operaciones de inventario en una
+    # misma sesión.
     while True:
         mostrar_menu_stock()
         opcion = input("Seleccione una opción: ")
@@ -1061,6 +1101,9 @@ def manejar_stock():
 
 
 def manejar_clientes():
+    """Mantiene activo el módulo de clientes y ejecuta sus operaciones."""
+    # Este ciclo permite consultar, registrar o eliminar clientes hasta volver
+    # al menú principal.
     while True:
         mostrar_menu_clientes()
         opcion = input("Seleccione una opción: ")
@@ -1078,6 +1121,7 @@ def manejar_clientes():
 
 
 def interfaz_reporte_general_pedidos():
+    """Muestra el total de pedidos y el conteo por estado."""
     reporte = obtener_reporte_general_pedidos()
 
     if reporte["total_pedidos"] == 0:
@@ -1098,6 +1142,7 @@ def interfaz_reporte_general_pedidos():
 
 
 def mostrar_pedidos_reporte(pedidos):
+    """Muestra una lista de pedidos preparada por el servicio de reportes."""
     for pedido in pedidos:
         print(f"\nCódigo de pedido: {pedido['codigo_pedido']}")
         print(f"RUC: {pedido['ruc_cliente']}")
@@ -1106,6 +1151,9 @@ def mostrar_pedidos_reporte(pedidos):
 
 
 def interfaz_reporte_pedidos_por_estado():
+    """Muestra un submenú para filtrar pedidos por estado."""
+    # Diccionario auxiliar para traducir la opción de menú al estado usado en
+    # pedidos.csv.
     estados_por_opcion = {
         "1": "Pedido registrado",
         "2": "Pedido recibido",
@@ -1115,6 +1163,8 @@ def interfaz_reporte_pedidos_por_estado():
         "6": "Pedido cancelado",
     }
 
+    # El submenú se mantiene activo para revisar varios estados sin salir de
+    # Reportes.
     while True:
         mostrar_menu_estados_reporte()
         opcion = input("Seleccione una opción: ")
@@ -1138,6 +1188,7 @@ def interfaz_reporte_pedidos_por_estado():
 
 
 def interfaz_reporte_productos_bajo_stock():
+    """Muestra productos con stock menor o igual al límite definido."""
     productos = obtener_productos_bajo_stock(limite=5)
 
     if len(productos) == 0:
@@ -1154,6 +1205,7 @@ def interfaz_reporte_productos_bajo_stock():
 
 
 def interfaz_reporte_producto_mas_solicitado():
+    """Muestra el producto acumulado como más solicitado en los detalles."""
     producto = obtener_producto_mas_solicitado()
 
     if producto is None:
@@ -1167,6 +1219,7 @@ def interfaz_reporte_producto_mas_solicitado():
 
 
 def interfaz_reporte_clientes_con_pedidos_en_curso():
+    """Muestra clientes que tienen pedidos activos."""
     clientes = obtener_clientes_con_pedidos_en_curso()
 
     if len(clientes) == 0:
@@ -1184,6 +1237,9 @@ def interfaz_reporte_clientes_con_pedidos_en_curso():
 
 
 def manejar_reportes():
+    """Mantiene activo el módulo de reportes y ejecuta cada reporte disponible."""
+    # El usuario puede consultar varios reportes antes de volver al menú
+    # principal.
     while True:
         mostrar_menu_reportes()
         opcion = input("Seleccione una opción: ")
@@ -1205,8 +1261,11 @@ def manejar_reportes():
 
 
 def iniciar_consola():
+    """Punto de inicio de la interfaz de consola del sistema."""
     mostrar_bienvenida()
 
+    # Menú principal de la aplicación: se mantiene activo hasta seleccionar
+    # la opción Salir.
     while True:
         mostrar_menu_principal()
         opcion = input("Seleccione una opción: ")

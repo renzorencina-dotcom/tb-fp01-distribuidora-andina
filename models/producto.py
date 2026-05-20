@@ -1,4 +1,6 @@
 class Producto:
+    """Representa un producto del inventario con stock y precio unitario."""
+
     def __init__(self, id_producto, descripcion, tipo, stock, precio_unitario):
         self.id_producto = id_producto
         self.descripcion = descripcion

@@ -1,3 +1,9 @@
+"""Lógica de negocio para clientes.
+
+El RUC funciona como identificador único del cliente y se usa para registrar,
+consultar y eliminar datos en `data/clientes.csv`.
+"""
+
 from models.cliente import Cliente
 from utils.csv_manager import (
     agregar_fila_csv,
@@ -12,6 +18,7 @@ CAMPOS_CLIENTE = ["ruc", "razon_social", "telefono", "direccion"]
 
 
 def convertir_fila_a_cliente(fila):
+    """Convierte una fila del CSV en una instancia de Cliente."""
     return Cliente(
         fila["ruc"],
         fila["razon_social"],
@@ -21,6 +28,7 @@ def convertir_fila_a_cliente(fila):
 
 
 def validar_datos_cliente(ruc, razon_social, telefono, direccion):
+    """Valida los campos mínimos requeridos para registrar un cliente."""
     if not texto_no_vacio(ruc):
         return False, "El RUC no puede estar vacío."
 
@@ -43,11 +51,14 @@ def validar_datos_cliente(ruc, razon_social, telefono, direccion):
 
 
 def registrar_cliente(ruc, razon_social, telefono, direccion):
+    """Registra un cliente nuevo si el RUC no existe previamente."""
     es_valido, mensaje = validar_datos_cliente(ruc, razon_social, telefono, direccion)
 
     if not es_valido:
         return False, None, mensaje
 
+    # El RUC identifica de forma única al cliente, por eso se verifica antes
+    # de agregar una nueva fila al archivo CSV.
     if buscar_por_campo(RUTA_CLIENTES, "ruc", ruc) is not None:
         return False, None, "Ya existe un cliente registrado con ese RUC."
 
@@ -62,6 +73,7 @@ def registrar_cliente(ruc, razon_social, telefono, direccion):
 
 
 def buscar_cliente_por_ruc(ruc):
+    """Busca un cliente por RUC y devuelve None si no existe."""
     fila = buscar_por_campo(RUTA_CLIENTES, "ruc", ruc)
 
     if fila is None:
@@ -71,6 +83,7 @@ def buscar_cliente_por_ruc(ruc):
 
 
 def consultar_cliente(ruc):
+    """Consulta un cliente por RUC devolviendo estado, objeto y mensaje."""
     if not texto_no_vacio(ruc):
         return False, None, "El RUC no puede estar vacío."
 
@@ -83,6 +96,7 @@ def consultar_cliente(ruc):
 
 
 def eliminar_cliente(ruc):
+    """Elimina un cliente usando el RUC como identificador único."""
     if not texto_no_vacio(ruc):
         return False, None, "El RUC no puede estar vacío."
 
