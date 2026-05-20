@@ -3,6 +3,14 @@ from services.cliente_service import (
     eliminar_cliente,
     registrar_cliente,
 )
+from services.pedido_service import (
+    actualizar_estado_pedido,
+    atender_pedido,
+    buscar_pedido_por_codigo,
+    codigo_pedido_existe,
+    registrar_cabecera_pedido,
+    registrar_detalle_pedido,
+)
 from services.producto_service import (
     agregar_stock,
     actualizar_stock,
@@ -11,6 +19,7 @@ from services.producto_service import (
     registrar_producto,
     restar_stock,
 )
+from models.pedido import DetallePedido
 from utils.validaciones import (
     id_producto_valido,
     mensaje_error_ruc,
@@ -47,6 +56,29 @@ def mostrar_menu_pedidos():
     print("2. Cancelar un pedido")
     print("3. Manejar estado de los pedidos")
     print("4. Volver al menú principal")
+
+
+def mostrar_menu_registrar_pedido():
+    print("\nRegistrar nuevo pedido")
+    print("1. Pedido para cliente existente")
+    print("2. Pedido para cliente nuevo")
+    print("3. Volver al menú anterior")
+
+
+def mostrar_menu_estado_pedidos():
+    print("\nManejar estado de los pedidos")
+    print("1. Actualizar estado de un pedido")
+    print("2. Consultar estado de un pedido")
+    print("3. Volver al menú anterior")
+
+
+def mostrar_menu_actualizar_estado_pedido():
+    print("\nSeleccione el nuevo estado del pedido")
+    print("1. Pedido recibido")
+    print("2. Pedido pendiente")
+    print("3. Pedido atendido parcialmente")
+    print("4. Pedido atendido")
+    print("5. Volver")
 
 
 def mostrar_menu_stock():
@@ -233,6 +265,448 @@ def pedir_precio_unitario():
             return precio_unitario
 
         print(mensaje_error_precio_unitario(precio_unitario))
+
+
+def pedir_confirmacion(mensaje):
+    respuesta = input(mensaje).strip().lower()
+    return respuesta in ("s", "si", "sí")
+
+
+def pedir_codigo_pedido():
+    while True:
+        codigo_pedido = pedir_dato_stock("Ingrese el código de pedido (4 dígitos): ")
+
+        if codigo_pedido is None:
+            return None
+
+        if not codigo_pedido.isdigit():
+            print("El código de pedido debe contener solo números.")
+            continue
+
+        if len(codigo_pedido) != 4:
+            print("El código de pedido debe tener exactamente 4 dígitos.")
+            continue
+
+        if codigo_pedido_existe(codigo_pedido):
+            print("Ya existe un pedido registrado con ese código.")
+            continue
+
+        return codigo_pedido
+
+
+def pedir_codigo_pedido_existente():
+    while True:
+        codigo_pedido = pedir_dato_stock("\nIngrese el código del pedido: ")
+
+        if codigo_pedido is None:
+            return None, None
+
+        if not codigo_pedido.isdigit():
+            print("El código de pedido debe contener solo números.")
+            continue
+
+        if len(codigo_pedido) != 4:
+            print("El código de pedido debe tener exactamente 4 dígitos.")
+            continue
+
+        pedido = buscar_pedido_por_codigo(codigo_pedido)
+
+        if pedido is None:
+            print("Pedido no encontrado")
+            continue
+
+        return codigo_pedido, pedido
+
+
+def pedir_cliente_existente_para_pedido():
+    while True:
+        ruc = pedir_ruc_cliente("Ingrese el RUC del cliente: ")
+
+        if ruc is None:
+            return None
+
+        fue_encontrado, cliente, _ = consultar_cliente(ruc)
+
+        if fue_encontrado:
+            return cliente
+
+        print("Cliente no registrado o no encontrado.")
+
+
+def registrar_cliente_desde_pedido():
+    print("\nRegistro de cliente para pedido")
+    print('Escriba "cancelar" para volver al menú Registrar nuevo pedido.')
+
+    while True:
+        ruc = pedir_ruc_cliente("Ingrese el RUC: ")
+
+        if ruc is None:
+            mostrar_operacion_cancelada()
+            return None
+
+        fue_encontrado, _, _ = consultar_cliente(ruc)
+
+        if not fue_encontrado:
+            break
+
+        print("Ya existe un cliente registrado con ese RUC.")
+
+    razon_social = pedir_dato_cliente("Ingrese la razón social: ")
+    if razon_social is None:
+        mostrar_operacion_cancelada()
+        return None
+
+    while True:
+        telefono = pedir_dato_cliente("Ingrese el teléfono: ")
+
+        if telefono is None:
+            mostrar_operacion_cancelada()
+            return None
+
+        if telefono_solo_numeros(telefono):
+            break
+
+        print(mensaje_error_telefono(telefono))
+
+    direccion = pedir_dato_cliente("Ingrese la dirección: ")
+    if direccion is None:
+        mostrar_operacion_cancelada()
+        return None
+
+    fue_registrado, cliente, mensaje = registrar_cliente(
+        ruc,
+        razon_social,
+        telefono,
+        direccion,
+    )
+    print(mensaje)
+
+    if fue_registrado:
+        mostrar_cliente(cliente)
+        return cliente
+
+    return None
+
+
+def guardar_pedido(cliente, detalle_pedido):
+    codigo_pedido = pedir_codigo_pedido()
+
+    if codigo_pedido is None:
+        mostrar_operacion_cancelada()
+        return
+
+    fue_registrada_cabecera, _, mensaje_cabecera = registrar_cabecera_pedido(
+        codigo_pedido,
+        cliente.ruc,
+        cliente.razon_social,
+    )
+
+    if not fue_registrada_cabecera:
+        print(mensaje_cabecera)
+        return
+
+    fue_registrado_detalle, _, mensaje_detalle = registrar_detalle_pedido(
+        codigo_pedido,
+        detalle_pedido,
+    )
+
+    if not fue_registrado_detalle:
+        print(mensaje_detalle)
+        return
+
+    print("Pedido registrado correctamente.")
+
+
+def pedir_producto_para_pedido():
+    while True:
+        id_producto = input("Ingrese el ID del producto: ").strip()
+
+        if entrada_cancelada(id_producto):
+            return "cancelar", None
+
+        if id_producto.lower() == "pedido terminado":
+            return "pedido terminado", None
+
+        id_producto = id_producto.upper()
+
+        if not id_producto.startswith("PER-") and not id_producto.startswith("ABA-"):
+            print("El ID del producto debe iniciar con PER- o ABA-.")
+            continue
+
+        fue_encontrado, producto, _ = consultar_producto(id_producto)
+
+        if not fue_encontrado:
+            print("Producto no registrado.")
+            continue
+
+        if producto.stock <= 0:
+            print("Producto agotado o no disponible.")
+            continue
+
+        return "producto", producto
+
+
+def pedir_cantidad_producto_pedido(producto):
+    while True:
+        cantidad = pedir_dato_stock("Ingrese la cantidad solicitada: ")
+
+        if cantidad is None:
+            return None
+
+        if not stock_valido(cantidad, producto.tipo):
+            print(mensaje_error_stock(cantidad, producto.tipo))
+            continue
+
+        cantidad = float(cantidad)
+
+        if cantidad <= 0:
+            print("La cantidad solicitada debe ser mayor que cero.")
+            continue
+
+        if cantidad > producto.stock:
+            print("Stock insuficiente para atender la cantidad solicitada.")
+            continue
+
+        return cantidad
+
+
+def registrar_productos_del_pedido():
+    detalle_pedido = []
+    print('\nIngrese productos del pedido. Escriba "Pedido terminado" para finalizar.')
+    print('Escriba "cancelar" para cancelar todo el registro del pedido.')
+
+    while True:
+        accion, producto = pedir_producto_para_pedido()
+
+        if accion == "cancelar":
+            mostrar_operacion_cancelada()
+            return None
+
+        if accion == "pedido terminado":
+            if len(detalle_pedido) == 0:
+                print("No se registraron productos en el pedido.")
+                return []
+
+            return detalle_pedido
+
+        cantidad = pedir_cantidad_producto_pedido(producto)
+
+        if cantidad is None:
+            mostrar_operacion_cancelada()
+            return None
+
+        detalle = DetallePedido(
+            "",
+            producto.id_producto,
+            producto.descripcion,
+            cantidad,
+            producto.precio_unitario,
+        )
+        detalle_pedido.append(detalle)
+        print("Producto agregado al pedido.")
+
+
+def mostrar_resumen_pedido(detalle_pedido):
+    total_general = 0
+
+    print("\nResumen del pedido")
+    for detalle in detalle_pedido:
+        print(
+            f"{detalle.descripcion} | "
+            f"Cantidad: {detalle.cantidad} | "
+            f"Precio unitario: S/ {detalle.precio_unitario:.2f} | "
+            f"Subtotal: S/ {detalle.subtotal:.2f}"
+        )
+        total_general += detalle.subtotal
+
+    print(f"Total general: S/ {total_general:.2f}")
+
+
+def mostrar_pedido(pedido):
+    print(f"\nCódigo del pedido: {pedido.codigo_pedido}")
+    print(f"RUC del cliente: {pedido.ruc_cliente}")
+    print(f"Razón social: {pedido.razon_social}")
+    print(f"Estado actual: {pedido.estado}")
+
+
+def registrar_pedido_para_cliente(cliente):
+    detalle_pedido = registrar_productos_del_pedido()
+
+    if detalle_pedido is None:
+        return
+
+    if len(detalle_pedido) == 0:
+        return
+
+    mostrar_resumen_pedido(detalle_pedido)
+
+    if not pedir_confirmacion("¿Desea confirmar el pedido? (s/n): "):
+        print("Registro de pedido cancelado.")
+        return
+
+    guardar_pedido(cliente, detalle_pedido)
+
+
+def interfaz_pedido_cliente_existente():
+    print("\nPedido para cliente existente")
+    print('Escriba "cancelar" para volver al menú Registrar nuevo pedido.')
+
+    cliente = pedir_cliente_existente_para_pedido()
+
+    if cliente is None:
+        mostrar_operacion_cancelada()
+        return
+
+    mostrar_cliente(cliente)
+    registrar_pedido_para_cliente(cliente)
+
+
+def interfaz_pedido_cliente_nuevo():
+    cliente = registrar_cliente_desde_pedido()
+
+    if cliente is None:
+        return
+
+    registrar_pedido_para_cliente(cliente)
+
+
+def interfaz_registrar_nuevo_pedido():
+    while True:
+        mostrar_menu_registrar_pedido()
+        opcion = input("Seleccione una opción: ")
+
+        if opcion == "1":
+            interfaz_pedido_cliente_existente()
+        elif opcion == "2":
+            interfaz_pedido_cliente_nuevo()
+        elif opcion == "3":
+            break
+        else:
+            print("\nOpción no válida. Intente nuevamente.")
+
+
+def interfaz_cancelar_pedido():
+    print("\nCancelar un pedido")
+    print('Escriba "cancelar" para volver al menú Manejar pedidos.')
+
+    while True:
+        codigo_pedido, pedido = pedir_codigo_pedido_existente()
+
+        if codigo_pedido is None:
+            mostrar_operacion_cancelada()
+            return
+
+        mostrar_pedido(pedido)
+
+        while True:
+            respuesta = input("¿Desea cancelar el pedido? (s/n): ").strip().lower()
+
+            if entrada_cancelada(respuesta):
+                mostrar_operacion_cancelada()
+                return
+
+            if respuesta == "s":
+                fue_actualizado, pedido_actualizado, mensaje = actualizar_estado_pedido(
+                    codigo_pedido,
+                    "Pedido cancelado",
+                )
+                print(mensaje)
+
+                if fue_actualizado:
+                    mostrar_pedido(pedido_actualizado)
+
+                return
+
+            if respuesta == "n":
+                print("Cancelación anulada")
+                break
+
+            print("Respuesta no válida. Ingrese s, n o cancelar.")
+
+
+def interfaz_consultar_estado_pedido():
+    print("\nConsultar estado de un pedido")
+    print('Escriba "cancelar" para volver al menú Manejar estado de los pedidos.')
+
+    while True:
+        _, pedido = pedir_codigo_pedido_existente()
+
+        if pedido is None:
+            return
+
+        mostrar_pedido(pedido)
+
+
+def pedir_nuevo_estado_pedido():
+    estados_por_opcion = {
+        "1": "Pedido recibido",
+        "2": "Pedido pendiente",
+        "3": "Pedido atendido parcialmente",
+        "4": "Pedido atendido",
+    }
+
+    while True:
+        mostrar_menu_actualizar_estado_pedido()
+        opcion = input("Seleccione una opción: ").strip()
+
+        if entrada_cancelada(opcion) or opcion == "5":
+            return None
+
+        if opcion in estados_por_opcion:
+            return estados_por_opcion[opcion]
+
+        print("\nOpción no válida. Intente nuevamente.")
+
+
+def interfaz_actualizar_estado_pedido():
+    print("\nActualizar estado de un pedido")
+    print('Escriba "cancelar" para volver al menú Manejar estado de los pedidos.')
+
+    while True:
+        codigo_pedido, pedido = pedir_codigo_pedido_existente()
+
+        if codigo_pedido is None:
+            return
+
+        mostrar_pedido(pedido)
+
+        if pedido.estado == "Pedido cancelado":
+            print("No se puede actualizar el estado de este pedido porque ha sido cancelado.")
+            return
+
+        nuevo_estado = pedir_nuevo_estado_pedido()
+
+        if nuevo_estado is None:
+            return
+
+        if nuevo_estado == "Pedido atendido":
+            fue_actualizado, pedido_actualizado, mensaje = atender_pedido(codigo_pedido)
+        else:
+            fue_actualizado, pedido_actualizado, mensaje = actualizar_estado_pedido(
+                codigo_pedido,
+                nuevo_estado,
+            )
+        print(mensaje)
+
+        if fue_actualizado:
+            mostrar_pedido(pedido_actualizado)
+
+        return
+
+
+def manejar_estado_pedidos():
+    while True:
+        mostrar_menu_estado_pedidos()
+        opcion = input("Seleccione una opción: ")
+
+        if opcion == "1":
+            interfaz_actualizar_estado_pedido()
+        elif opcion == "2":
+            interfaz_consultar_estado_pedido()
+        elif opcion == "3":
+            break
+        else:
+            print("\nOpción no válida. Intente nuevamente.")
 
 
 def mostrar_cliente(cliente):
@@ -519,8 +993,12 @@ def manejar_pedidos():
         mostrar_menu_pedidos()
         opcion = input("Seleccione una opción: ")
 
-        if opcion in ("1", "2", "3"):
-            mostrar_funcionalidad_pendiente()
+        if opcion == "1":
+            interfaz_registrar_nuevo_pedido()
+        elif opcion == "2":
+            interfaz_cancelar_pedido()
+        elif opcion == "3":
+            manejar_estado_pedidos()
         elif opcion == "4":
             break
         else:
