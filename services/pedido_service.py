@@ -186,17 +186,3 @@ def registrar_detalle_pedido(codigo_pedido, detalles):
         CAMPOS_DETALLE_PEDIDO,
     )
     return True, detalles_normalizados, "Detalle de pedido registrado correctamente."
-
-
-def obtener_pedidos():
-    return [
-        convertir_fila_a_pedido(fila)
-        for fila in leer_csv(RUTA_PEDIDOS)
-    ]
-
-
-def obtener_detalles_pedidos():
-    return [
-        convertir_fila_a_detalle_pedido(fila)
-        for fila in leer_csv(RUTA_DETALLE_PEDIDOS)
-    ]
