@@ -3,7 +3,6 @@ from utils.csv_manager import (
     agregar_fila_csv,
     buscar_por_campo,
     eliminar_fila_csv,
-    leer_csv,
 )
 from utils.validaciones import ruc_solo_numeros, telefono_solo_numeros, texto_no_vacio
 
@@ -19,10 +18,6 @@ def convertir_fila_a_cliente(fila):
         fila["telefono"],
         fila["direccion"],
     )
-
-
-def listar_clientes():
-    return [convertir_fila_a_cliente(fila) for fila in leer_csv(RUTA_CLIENTES)]
 
 
 def validar_datos_cliente(ruc, razon_social, telefono, direccion):
