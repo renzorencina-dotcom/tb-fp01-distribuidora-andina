@@ -226,3 +226,38 @@ def restar_stock(id_producto, cantidad):
 
     guardar_productos(productos)
     return True, producto, "Stock descontado correctamente."
+
+
+def descontar_stock_por_detalles(detalles):
+    productos = listar_productos()
+    productos_por_id = {
+        producto.id_producto.strip().upper(): producto
+        for producto in productos
+    }
+    productos_actualizados = []
+
+    for detalle in detalles:
+        id_producto = detalle.id_producto.strip().upper()
+        producto = productos_por_id.get(id_producto)
+
+        if producto is None:
+            return False, [], f"Producto {id_producto} no encontrado."
+
+        cantidad = float(detalle.cantidad)
+
+        if cantidad <= 0:
+            return False, [], f"La cantidad del producto {id_producto} no es válida."
+
+        if producto.tipo.strip().lower() == "abarrote" and not cantidad.is_integer():
+            return False, [], f"La cantidad del producto {id_producto} debe ser entera."
+
+        nuevo_stock = descontar_stock(producto.stock, cantidad)
+
+        if nuevo_stock is None:
+            return False, [], f"Stock insuficiente para atender el producto {id_producto}."
+
+        producto.stock = nuevo_stock
+        productos_actualizados.append(producto)
+
+    guardar_productos(productos)
+    return True, productos_actualizados, "Stock descontado correctamente."
