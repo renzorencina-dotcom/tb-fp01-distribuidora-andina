@@ -19,6 +19,14 @@ from services.producto_service import (
     registrar_producto,
     restar_stock,
 )
+from services.reporte_service import (
+    obtener_clientes_con_pedidos_en_curso,
+    obtener_pedidos_por_estado,
+    obtener_producto_mas_solicitado,
+    obtener_productos_bajo_stock,
+    obtener_reporte_general_pedidos,
+)
+from models.cliente import Cliente
 from models.pedido import DetallePedido
 from utils.validaciones import (
     id_producto_valido,
@@ -116,8 +124,15 @@ def mostrar_menu_reportes():
     print("6. Volver al menú principal")
 
 
-def mostrar_funcionalidad_pendiente():
-    print("\nFuncionalidad pendiente de implementación.")
+def mostrar_menu_estados_reporte():
+    print("\nReporte de pedidos por estado")
+    print("1. Pedido registrado")
+    print("2. Pedido recibido")
+    print("3. Pedido pendiente")
+    print("4. Pedido atendido parcialmente")
+    print("5. Pedido atendido")
+    print("6. Pedido cancelado")
+    print("7. Volver")
 
 
 def mostrar_operacion_cancelada():
@@ -318,7 +333,7 @@ def pedir_codigo_pedido_existente():
         return codigo_pedido, pedido
 
 
-def pedir_cliente_existente_para_pedido():
+def pedir_cliente_existente_para_pedido() -> Cliente | None:
     while True:
         ruc = pedir_ruc_cliente("Ingrese el RUC del cliente: ")
 
@@ -327,13 +342,13 @@ def pedir_cliente_existente_para_pedido():
 
         fue_encontrado, cliente, _ = consultar_cliente(ruc)
 
-        if fue_encontrado:
+        if fue_encontrado and cliente is not None:
             return cliente
 
         print("Cliente no registrado o no encontrado.")
 
 
-def registrar_cliente_desde_pedido():
+def registrar_cliente_desde_pedido() -> Cliente | None:
     print("\nRegistro de cliente para pedido")
     print('Escriba "cancelar" para volver al menú Registrar nuevo pedido.')
 
@@ -381,14 +396,14 @@ def registrar_cliente_desde_pedido():
     )
     print(mensaje)
 
-    if fue_registrado:
+    if fue_registrado and cliente is not None:
         mostrar_cliente(cliente)
         return cliente
 
     return None
 
 
-def guardar_pedido(cliente, detalle_pedido):
+def guardar_pedido(cliente: Cliente, detalle_pedido):
     codigo_pedido = pedir_codigo_pedido()
 
     if codigo_pedido is None:
@@ -529,7 +544,7 @@ def mostrar_pedido(pedido):
     print(f"Estado actual: {pedido.estado}")
 
 
-def registrar_pedido_para_cliente(cliente):
+def registrar_pedido_para_cliente(cliente: Cliente):
     detalle_pedido = registrar_productos_del_pedido()
 
     if detalle_pedido is None:
@@ -671,7 +686,14 @@ def interfaz_actualizar_estado_pedido():
         mostrar_pedido(pedido)
 
         if pedido.estado == "Pedido cancelado":
-            print("No se puede actualizar el estado de este pedido porque ha sido cancelado.")
+            print(
+                "No se puede actualizar el estado de este pedido porque ha sido "
+                "cancelado."
+            )
+            return
+
+        if pedido.estado == "Pedido atendido":
+            print("Este pedido ya fue atendido y no puede cambiar de estado.")
             return
 
         nuevo_estado = pedir_nuevo_estado_pedido()
@@ -680,7 +702,9 @@ def interfaz_actualizar_estado_pedido():
             return
 
         if nuevo_estado == "Pedido atendido":
-            fue_actualizado, pedido_actualizado, mensaje = atender_pedido(codigo_pedido)
+            fue_actualizado, pedido_actualizado, mensaje = atender_pedido(
+                codigo_pedido
+            )
         else:
             fue_actualizado, pedido_actualizado, mensaje = actualizar_estado_pedido(
                 codigo_pedido,
@@ -709,7 +733,7 @@ def manejar_estado_pedidos():
             print("\nOpción no válida. Intente nuevamente.")
 
 
-def mostrar_cliente(cliente):
+def mostrar_cliente(cliente: Cliente):
     print(f"RUC: {cliente.ruc}")
     print(f"Razón social: {cliente.razon_social}")
     print(f"Teléfono: {cliente.telefono}")
@@ -728,7 +752,7 @@ def interfaz_consultar_cliente():
     fue_encontrado, cliente, mensaje = consultar_cliente(ruc)
     print(mensaje)
 
-    if fue_encontrado:
+    if fue_encontrado and cliente is not None:
         mostrar_cliente(cliente)
 
 
@@ -771,7 +795,7 @@ def interfaz_registrar_cliente():
     )
     print(mensaje)
 
-    if fue_registrado:
+    if fue_registrado and cliente is not None:
         mostrar_cliente(cliente)
 
 
@@ -790,6 +814,10 @@ def interfaz_eliminar_cliente():
         print(mensaje)
         return
 
+    if cliente is None:
+        print("Cliente no encontrado.")
+        return
+
     mostrar_cliente(cliente)
     confirmacion = input("¿Confirma la eliminación? (s/n): ").strip().lower()
 
@@ -800,7 +828,7 @@ def interfaz_eliminar_cliente():
     fue_eliminado, cliente_eliminado, mensaje = eliminar_cliente(ruc)
     print(mensaje)
 
-    if fue_eliminado:
+    if fue_eliminado and cliente_eliminado is not None:
         mostrar_cliente(cliente_eliminado)
 
 
@@ -826,7 +854,10 @@ def interfaz_registrar_producto():
         mostrar_operacion_cancelada()
         return
 
-    descripcion = pedir_texto_obligatorio("Ingrese la descripción: ", "La descripción")
+    descripcion = pedir_texto_obligatorio(
+        "Ingrese la descripción: ",
+        "La descripción",
+    )
     if descripcion is None:
         mostrar_operacion_cancelada()
         return
@@ -858,7 +889,9 @@ def interfaz_eliminar_producto():
     print("\nEliminar productos del stock")
     print('Escriba "cancelar" para volver al menú de stock.')
 
-    id_producto, producto = pedir_producto_existente("Ingrese el ID del producto a eliminar: ")
+    id_producto, producto = pedir_producto_existente(
+        "Ingrese el ID del producto a eliminar: "
+    )
 
     if id_producto is None:
         mostrar_operacion_cancelada()
@@ -895,7 +928,10 @@ def interfaz_agregar_stock():
         mostrar_operacion_cancelada()
         return
 
-    fue_actualizado, producto_actualizado, mensaje = agregar_stock(id_producto, cantidad)
+    fue_actualizado, producto_actualizado, mensaje = agregar_stock(
+        id_producto,
+        cantidad,
+    )
     print(mensaje)
 
     if fue_actualizado:
@@ -1041,13 +1077,127 @@ def manejar_clientes():
             print("\nOpción no válida. Intente nuevamente.")
 
 
+def interfaz_reporte_general_pedidos():
+    reporte = obtener_reporte_general_pedidos()
+
+    if reporte["total_pedidos"] == 0:
+        print("\nNo hay pedidos registrados.")
+        return
+
+    print("\nReporte general de pedidos")
+    print(f"Total de pedidos: {reporte['total_pedidos']}")
+    print(f"Pedido registrado: {reporte['Pedido registrado']}")
+    print(f"Pedido recibido: {reporte['Pedido recibido']}")
+    print(f"Pedido pendiente: {reporte['Pedido pendiente']}")
+    print(
+        "Pedido atendido parcialmente: "
+        f"{reporte['Pedido atendido parcialmente']}"
+    )
+    print(f"Pedido atendido: {reporte['Pedido atendido']}")
+    print(f"Pedido cancelado: {reporte['Pedido cancelado']}")
+
+
+def mostrar_pedidos_reporte(pedidos):
+    for pedido in pedidos:
+        print(f"\nCódigo de pedido: {pedido['codigo_pedido']}")
+        print(f"RUC: {pedido['ruc_cliente']}")
+        print(f"Razón social: {pedido['razon_social']}")
+        print(f"Estado: {pedido['estado']}")
+
+
+def interfaz_reporte_pedidos_por_estado():
+    estados_por_opcion = {
+        "1": "Pedido registrado",
+        "2": "Pedido recibido",
+        "3": "Pedido pendiente",
+        "4": "Pedido atendido parcialmente",
+        "5": "Pedido atendido",
+        "6": "Pedido cancelado",
+    }
+
+    while True:
+        mostrar_menu_estados_reporte()
+        opcion = input("Seleccione una opción: ")
+
+        if opcion == "7":
+            break
+
+        if opcion not in estados_por_opcion:
+            print("\nOpción no válida. Intente nuevamente.")
+            continue
+
+        estado = estados_por_opcion[opcion]
+        pedidos = obtener_pedidos_por_estado(estado)
+
+        if len(pedidos) == 0:
+            print("\nNo se encontraron pedidos con el estado seleccionado.")
+            continue
+
+        print(f"\nPedidos con estado: {estado}")
+        mostrar_pedidos_reporte(pedidos)
+
+
+def interfaz_reporte_productos_bajo_stock():
+    productos = obtener_productos_bajo_stock(limite=5)
+
+    if len(productos) == 0:
+        print("\nNo se encontraron productos con bajo stock.")
+        return
+
+    print("\nReporte de productos con bajo stock")
+    for producto in productos:
+        print(f"\nID: {producto['id_producto']}")
+        print(f"Descripción: {producto['descripcion']}")
+        print(f"Tipo: {producto['tipo']}")
+        print(f"Stock: {producto['stock']}")
+        print(f"Precio unitario: S/ {producto['precio_unitario']:.2f}")
+
+
+def interfaz_reporte_producto_mas_solicitado():
+    producto = obtener_producto_mas_solicitado()
+
+    if producto is None:
+        print("\nNo hay productos solicitados registrados.")
+        return
+
+    print("\nReporte de producto más solicitado")
+    print(f"ID del producto: {producto['id_producto']}")
+    print(f"Descripción: {producto['descripcion']}")
+    print(f"Cantidad total solicitada: {producto['cantidad_total']}")
+
+
+def interfaz_reporte_clientes_con_pedidos_en_curso():
+    clientes = obtener_clientes_con_pedidos_en_curso()
+
+    if len(clientes) == 0:
+        print("\nNo hay clientes con pedidos en curso.")
+        return
+
+    print("\nReporte de clientes con pedidos en curso")
+    for cliente in clientes:
+        print(f"\nRUC: {cliente['ruc_cliente']}")
+        print(f"Razón social: {cliente['razon_social']}")
+        print(
+            "Cantidad de pedidos en curso: "
+            f"{cliente['cantidad_pedidos_en_curso']}"
+        )
+
+
 def manejar_reportes():
     while True:
         mostrar_menu_reportes()
         opcion = input("Seleccione una opción: ")
 
-        if opcion in ("1", "2", "3", "4", "5"):
-            mostrar_funcionalidad_pendiente()
+        if opcion == "1":
+            interfaz_reporte_general_pedidos()
+        elif opcion == "2":
+            interfaz_reporte_pedidos_por_estado()
+        elif opcion == "3":
+            interfaz_reporte_productos_bajo_stock()
+        elif opcion == "4":
+            interfaz_reporte_producto_mas_solicitado()
+        elif opcion == "5":
+            interfaz_reporte_clientes_con_pedidos_en_curso()
         elif opcion == "6":
             break
         else:
