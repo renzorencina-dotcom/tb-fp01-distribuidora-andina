@@ -1,0 +1,3 @@
+id_producto,descripcion,tipo,stock,precio_unitario
+PER-1234,ARROZ,perecible,65.5,4
+ABA-2344,ACEITE,abarrote,11,9

@@ -1,9 +1,16 @@
 class Producto:
-    def __init__(self, id_producto, nombre, stock, precio):
+    def __init__(self, id_producto, descripcion, tipo, stock, precio_unitario):
         self.id_producto = id_producto
-        self.nombre = nombre
+        self.descripcion = descripcion
+        self.tipo = tipo
         self.stock = stock
-        self.precio = precio
+        self.precio_unitario = precio_unitario
 
     def __str__(self):
-        return f"{self.nombre} | Stock: {self.stock} | Precio: S/ {self.precio:.2f}"
+        return (
+            f"ID: {self.id_producto} | "
+            f"Descripción: {self.descripcion} | "
+            f"Tipo: {self.tipo} | "
+            f"Stock: {self.stock} | "
+            f"Precio unitario: S/ {self.precio_unitario:.2f}"
+        )

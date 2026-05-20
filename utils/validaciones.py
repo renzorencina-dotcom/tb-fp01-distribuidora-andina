@@ -58,3 +58,106 @@ def mensaje_error_telefono(telefono):
         return "El teléfono debe iniciar con 9 si es celular o con 01 si es fijo."
 
     return ""
+
+
+def tipo_producto_valido(tipo):
+    return tipo.strip().lower() in ("perecible", "abarrote")
+
+
+def id_producto_valido(id_producto, tipo):
+    id_producto = id_producto.strip().upper()
+    tipo = tipo.strip().lower()
+
+    if tipo == "perecible":
+        return id_producto.startswith("PER-")
+
+    if tipo == "abarrote":
+        return id_producto.startswith("ABA-")
+
+    return False
+
+
+def stock_valido(stock, tipo):
+    stock = stock.strip()
+    tipo = tipo.strip().lower()
+
+    try:
+        cantidad = float(stock)
+    except ValueError:
+        return False
+
+    if cantidad < 0:
+        return False
+
+    if tipo == "abarrote" and not cantidad.is_integer():
+        return False
+
+    return True
+
+
+def precio_unitario_valido(precio_unitario):
+    precio_unitario = precio_unitario.strip()
+
+    try:
+        precio = float(precio_unitario)
+    except ValueError:
+        return False
+
+    return precio > 0
+
+
+def mensaje_error_tipo_producto(tipo):
+    if tipo.strip() == "":
+        return "El tipo de producto no puede estar vacío."
+
+    return "El tipo de producto debe ser perecible o abarrote."
+
+
+def mensaje_error_id_producto(id_producto, tipo):
+    if id_producto.strip() == "":
+        return "El ID del producto no puede estar vacío."
+
+    if tipo.strip().lower() == "perecible":
+        return "El ID de un producto perecible debe iniciar con PER-."
+
+    if tipo.strip().lower() == "abarrote":
+        return "El ID de un producto abarrote debe iniciar con ABA-."
+
+    return "Primero debe ingresar un tipo de producto válido."
+
+
+def mensaje_error_stock(stock, tipo):
+    stock = stock.strip()
+
+    if stock == "":
+        return "El stock no puede estar vacío."
+
+    try:
+        cantidad = float(stock)
+    except ValueError:
+        return "El stock debe ser un número."
+
+    if cantidad < 0:
+        return "El stock no puede ser negativo."
+
+    if tipo.strip().lower() == "abarrote" and not cantidad.is_integer():
+        return "El stock de un producto abarrote debe ser una cantidad entera."
+
+    return ""
+
+
+def mensaje_error_precio_unitario(precio_unitario):
+    precio_unitario = precio_unitario.strip()
+
+    if precio_unitario == "":
+        return "El precio unitario no puede estar vacío."
+
+    try:
+        precio = float(precio_unitario)
+    except ValueError:
+        return "El precio unitario debe ser un número."
+
+    if precio <= 0:
+        return "El precio unitario debe ser mayor que cero."
+
+    return ""
