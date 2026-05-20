@@ -1,0 +1,5 @@
+codigo_pedido,id_producto,descripcion,cantidad,precio_unitario,subtotal
+0001,PER-1234,ARROZ,12.25,4,49
+0001,ABA-2344,ACEITE,3,9,27
+0002,ABA-2344,ACEITE,5,9,45
+0002,PER-1234,ARROZ,5.74,4,22.96
