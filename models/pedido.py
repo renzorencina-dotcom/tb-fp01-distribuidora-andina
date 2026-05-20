@@ -1,4 +1,6 @@
 class Pedido:
+    """Representa la cabecera de una orden realizada por un cliente."""
+
     def __init__(
         self,
         codigo_pedido,
@@ -21,6 +23,8 @@ class Pedido:
 
 
 class DetallePedido:
+    """Representa un producto solicitado dentro de un pedido."""
+
     def __init__(
         self,
         codigo_pedido,

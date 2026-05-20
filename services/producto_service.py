@@ -1,3 +1,5 @@
+"""Lógica de negocio para productos e inventario."""
+
 from models.producto import Producto
 from services.inventario_service import descontar_stock, sumar_stock
 from utils.csv_manager import (
@@ -26,6 +28,7 @@ CAMPOS_PRODUCTO = [
 
 
 def formatear_numero(valor):
+    """Devuelve números sin decimales innecesarios para guardarlos en CSV."""
     valor = float(valor)
 
     if valor.is_integer():
@@ -35,10 +38,12 @@ def formatear_numero(valor):
 
 
 def normalizar_tipo(tipo):
+    """Normaliza el tipo de producto para comparar perecible y abarrote."""
     return tipo.strip().lower()
 
 
 def convertir_fila_a_producto(fila):
+    """Convierte una fila del CSV de productos en un objeto Producto."""
     return Producto(
         fila["id_producto"],
         fila["descripcion"],
@@ -49,6 +54,7 @@ def convertir_fila_a_producto(fila):
 
 
 def convertir_producto_a_fila(producto):
+    """Convierte un Producto en diccionario listo para escribirse en CSV."""
     return {
         "id_producto": producto.id_producto,
         "descripcion": producto.descripcion,
@@ -59,15 +65,18 @@ def convertir_producto_a_fila(producto):
 
 
 def listar_productos():
+    """Obtiene todos los productos registrados en el archivo CSV."""
     return [convertir_fila_a_producto(fila) for fila in leer_csv(RUTA_PRODUCTOS)]
 
 
 def guardar_productos(productos):
+    """Guarda la lista completa de productos después de una actualización."""
     filas = [convertir_producto_a_fila(producto) for producto in productos]
     escribir_csv(RUTA_PRODUCTOS, filas, CAMPOS_PRODUCTO)
 
 
 def validar_datos_producto(id_producto, descripcion, tipo, stock, precio_unitario):
+    """Valida los datos requeridos para registrar o actualizar un producto."""
     if not texto_no_vacio(id_producto):
         return False, "El ID del producto no puede estar vacío."
 
@@ -93,6 +102,7 @@ def validar_datos_producto(id_producto, descripcion, tipo, stock, precio_unitari
 
 
 def buscar_producto_por_id(id_producto):
+    """Busca un producto por ID normalizando el código a mayúsculas."""
     fila = buscar_por_campo(RUTA_PRODUCTOS, "id_producto", id_producto.strip().upper())
 
     if fila is None:
@@ -102,6 +112,7 @@ def buscar_producto_por_id(id_producto):
 
 
 def consultar_producto(id_producto):
+    """Consulta un producto por ID y devuelve estado, objeto y mensaje."""
     producto = buscar_producto_por_id(id_producto)
 
     if producto is None:
@@ -111,6 +122,7 @@ def consultar_producto(id_producto):
 
 
 def registrar_producto(id_producto, descripcion, tipo, stock, precio_unitario):
+    """Registra un producto nuevo o suma stock si el producto ya existe."""
     id_producto = id_producto.strip().upper()
     descripcion = descripcion.strip()
     tipo = normalizar_tipo(tipo)
@@ -130,6 +142,8 @@ def registrar_producto(id_producto, descripcion, tipo, stock, precio_unitario):
 
     producto_existente = buscar_producto_por_id(id_producto)
 
+    # Si el producto ya existe, no se duplica la fila: se suma el stock
+    # ingresado al registro existente para mantener un único inventario por ID.
     if producto_existente is not None:
         return agregar_stock(id_producto, stock)
 
@@ -147,6 +161,7 @@ def registrar_producto(id_producto, descripcion, tipo, stock, precio_unitario):
 
 
 def eliminar_producto(id_producto):
+    """Elimina un producto del inventario usando su ID."""
     fila_eliminada = eliminar_fila_csv(
         RUTA_PRODUCTOS,
         "id_producto",
@@ -161,6 +176,7 @@ def eliminar_producto(id_producto):
 
 
 def actualizar_stock(id_producto, nuevo_stock):
+    """Reemplaza el stock completo de un producto existente."""
     producto = buscar_producto_por_id(id_producto)
 
     if producto is None:
@@ -171,6 +187,8 @@ def actualizar_stock(id_producto, nuevo_stock):
 
     productos = listar_productos()
 
+    # Se recorre la lista cargada desde CSV para modificar solo el producto
+    # encontrado antes de reescribir el inventario completo.
     for producto_actual in productos:
         if producto_actual.id_producto == producto.id_producto:
             producto_actual.stock = float(nuevo_stock)
@@ -182,6 +200,7 @@ def actualizar_stock(id_producto, nuevo_stock):
 
 
 def agregar_stock(id_producto, cantidad):
+    """Suma una cantidad al stock actual de un producto."""
     producto = buscar_producto_por_id(id_producto)
 
     if producto is None:
@@ -192,6 +211,8 @@ def agregar_stock(id_producto, cantidad):
 
     productos = listar_productos()
 
+    # La suma usa inventario_service para mantener aislada la operación
+    # aritmética del manejo de archivos CSV.
     for producto_actual in productos:
         if producto_actual.id_producto == producto.id_producto:
             producto_actual.stock = sumar_stock(producto_actual.stock, float(cantidad))
@@ -203,6 +224,7 @@ def agregar_stock(id_producto, cantidad):
 
 
 def restar_stock(id_producto, cantidad):
+    """Resta stock evitando que el inventario quede en negativo."""
     producto = buscar_producto_por_id(id_producto)
 
     if producto is None:
@@ -213,6 +235,8 @@ def restar_stock(id_producto, cantidad):
 
     productos = listar_productos()
 
+    # Si descontar_stock devuelve None, la operación se detiene para impedir
+    # que el producto quede con stock negativo.
     for producto_actual in productos:
         if producto_actual.id_producto == producto.id_producto:
             nuevo_stock = descontar_stock(producto_actual.stock, float(cantidad))
@@ -229,7 +253,10 @@ def restar_stock(id_producto, cantidad):
 
 
 def descontar_stock_por_detalles(detalles):
+    """Descuenta stock para todos los productos incluidos en un pedido."""
     productos = listar_productos()
+    # Diccionario auxiliar para buscar productos por ID sin recorrer toda la
+    # lista de inventario por cada detalle del pedido.
     productos_por_id = {
         producto.id_producto.strip().upper(): producto
         for producto in productos
@@ -248,6 +275,8 @@ def descontar_stock_por_detalles(detalles):
         if cantidad <= 0:
             return False, [], f"La cantidad del producto {id_producto} no es válida."
 
+        # Los abarrotes se manejan en unidades enteras; los perecibles pueden
+        # aceptar cantidades decimales.
         if producto.tipo.strip().lower() == "abarrote" and not cantidad.is_integer():
             return False, [], f"La cantidad del producto {id_producto} debe ser entera."
 

@@ -1,4 +1,6 @@
 class Cliente:
+    """Representa a un cliente identificado por su RUC dentro del sistema."""
+
     def __init__(self, ruc, razon_social, telefono, direccion):
         self.ruc = ruc
         self.razon_social = razon_social

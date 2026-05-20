@@ -1,3 +1,5 @@
+"""Servicios de lectura y acumulación para reportes del sistema."""
+
 from utils.csv_manager import leer_csv
 
 
@@ -22,6 +24,7 @@ ESTADOS_PEDIDOS_EN_CURSO = [
 
 
 def convertir_a_numero(valor):
+    """Convierte texto de CSV a número y usa 0 cuando el dato no es válido."""
     try:
         return float(valor)
     except (TypeError, ValueError):
@@ -29,6 +32,7 @@ def convertir_a_numero(valor):
 
 
 def formatear_numero(valor):
+    """Devuelve enteros sin decimal y decimales redondeados para mostrar reportes."""
     valor = float(valor)
 
     if valor.is_integer():
@@ -38,7 +42,10 @@ def formatear_numero(valor):
 
 
 def obtener_reporte_general_pedidos():
+    """Cuenta el total de pedidos y cuántos hay por cada estado permitido."""
     pedidos = leer_csv(RUTA_PEDIDOS)
+    # Diccionario contador: cada estado empieza en cero para que el reporte
+    # mantenga siempre la misma estructura aunque no haya pedidos.
     reporte = {
         "total_pedidos": len(pedidos),
     }
@@ -49,6 +56,8 @@ def obtener_reporte_general_pedidos():
     for pedido in pedidos:
         estado = pedido.get("estado", "")
 
+        # Cada fila de pedidos.csv representa una cabecera; aquí se acumula
+        # el contador del estado correspondiente.
         if estado in reporte:
             reporte[estado] += 1
 
@@ -56,6 +65,7 @@ def obtener_reporte_general_pedidos():
 
 
 def obtener_pedidos_por_estado(estado):
+    """Filtra pedidos cuya cabecera coincide con el estado recibido."""
     pedidos = leer_csv(RUTA_PEDIDOS)
 
     return [
@@ -71,6 +81,7 @@ def obtener_pedidos_por_estado(estado):
 
 
 def obtener_productos_bajo_stock(limite=5):
+    """Devuelve productos cuyo stock sea menor o igual al límite indicado."""
     productos = leer_csv(RUTA_PRODUCTOS)
     limite = convertir_a_numero(limite)
     productos_bajo_stock = []
@@ -78,6 +89,8 @@ def obtener_productos_bajo_stock(limite=5):
     for producto in productos:
         stock = convertir_a_numero(producto.get("stock"))
 
+        # El CSV almacena el stock como texto; se convierte a número antes de
+        # compararlo con el límite del reporte.
         if stock <= limite:
             productos_bajo_stock.append(
                 {
@@ -95,11 +108,14 @@ def obtener_productos_bajo_stock(limite=5):
 
 
 def obtener_producto_mas_solicitado():
+    """Acumula cantidades de detalle_pedidos.csv y devuelve el producto mayor."""
     detalles = leer_csv(RUTA_DETALLE_PEDIDOS)
 
     if len(detalles) == 0:
         return None
 
+    # Diccionario acumulador por id_producto: guarda descripción y cantidad
+    # total solicitada a partir de todos los detalles de pedidos.
     productos_solicitados = {}
 
     for detalle in detalles:
@@ -134,10 +150,14 @@ def obtener_producto_mas_solicitado():
 
 
 def obtener_clientes_con_pedidos_en_curso():
+    """Agrupa clientes con pedidos que aún no han sido atendidos o cancelados."""
     pedidos = leer_csv(RUTA_PEDIDOS)
+    # Diccionario acumulador por RUC para contar cuántos pedidos en curso
+    # tiene cada cliente sin duplicar su información.
     clientes = {}
 
     for pedido in pedidos:
+        # Solo estos estados representan pedidos activos para el cliente.
         if pedido.get("estado") not in ESTADOS_PEDIDOS_EN_CURSO:
             continue
 
