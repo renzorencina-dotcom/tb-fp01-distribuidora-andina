@@ -27,16 +27,16 @@ class MainWindow(QMainWindow):
         self._configurar_interfaz()
 
     def _crear_paginas(self) -> None:
-        dashboard = DashboardPage()
+        self.dashboard = DashboardPage()
         pedidos =   PedidosPage()
         clientes = ClientesPage()
-        stocks = StockPage()
+        stock = StockPage()
         reportes = ReportesPage()
 
-        self.pages.addWidget(dashboard)
+        self.pages.addWidget(self.dashboard)
         self.pages.addWidget(pedidos)
         self.pages.addWidget(clientes)
-        self.pages.addWidget(stocks)
+        self.pages.addWidget(stock)
         self.pages.addWidget(reportes)
 
     def _configurar_interfaz(self) -> None:
@@ -57,10 +57,10 @@ class MainWindow(QMainWindow):
         boton_dashboard = QPushButton("Dashboard")
         boton_pedidos = QPushButton("Pedidos")
         boton_clientes = QPushButton("Clientes")
-        boton_stocks = QPushButton("Stocks")
+        boton_stocks = QPushButton("Stock")
         boton_reportes = QPushButton("Reportes")
 
-        boton_dashboard.clicked.connect(lambda:self.pages.setCurrentIndex(0))
+        boton_dashboard.clicked.connect(self._mostrar_dashboard)
         boton_pedidos.clicked.connect(lambda:self.pages.setCurrentIndex(1))
         boton_clientes.clicked.connect(lambda:self.pages.setCurrentIndex(2))
         boton_stocks.clicked.connect(lambda:self.pages.setCurrentIndex(3))
@@ -74,3 +74,7 @@ class MainWindow(QMainWindow):
         sidebar_layout.addStretch()
 
         return sidebar
+
+    def _mostrar_dashboard(self) -> None:
+        self.dashboard.actualizar_datos()
+        self.pages.setCurrentIndex(0)

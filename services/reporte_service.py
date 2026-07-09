@@ -176,3 +176,9 @@ def obtener_clientes_con_pedidos_en_curso():
         clientes[ruc_cliente]["cantidad_pedidos_en_curso"] += 1
 
     return list(clientes.values())
+
+def obtener_pedidos_recientes(limite=10):
+    """Devuelve los últimos pedidos registrados hasta el límite indicado."""
+    pedidos = leer_csv(RUTA_PEDIDOS)
+
+    return pedidos[-limite:]
