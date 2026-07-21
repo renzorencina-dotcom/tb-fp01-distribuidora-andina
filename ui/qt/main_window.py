@@ -28,13 +28,13 @@ class MainWindow(QMainWindow):
 
     def _crear_paginas(self) -> None:
         self.dashboard = DashboardPage()
-        pedidos =   PedidosPage()
+        self.pedidos = PedidosPage()
         clientes = ClientesPage()
         stock = StockPage()
         reportes = ReportesPage()
 
         self.pages.addWidget(self.dashboard)
-        self.pages.addWidget(pedidos)
+        self.pages.addWidget(self.pedidos)
         self.pages.addWidget(clientes)
         self.pages.addWidget(stock)
         self.pages.addWidget(reportes)
@@ -61,7 +61,7 @@ class MainWindow(QMainWindow):
         boton_reportes = QPushButton("Reportes")
 
         boton_dashboard.clicked.connect(self._mostrar_dashboard)
-        boton_pedidos.clicked.connect(lambda:self.pages.setCurrentIndex(1))
+        boton_pedidos.clicked.connect(self._mostrar_pedidos)
         boton_clientes.clicked.connect(lambda:self.pages.setCurrentIndex(2))
         boton_stocks.clicked.connect(lambda:self.pages.setCurrentIndex(3))
         boton_reportes.clicked.connect(lambda:self.pages.setCurrentIndex(4))
@@ -78,3 +78,7 @@ class MainWindow(QMainWindow):
     def _mostrar_dashboard(self) -> None:
         self.dashboard.actualizar_datos()
         self.pages.setCurrentIndex(0)
+
+    def _mostrar_pedidos(self) -> None:
+        self.dashboard.actualizar_datos()
+        self.pages.setCurrentIndex(1)
