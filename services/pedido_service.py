@@ -171,7 +171,7 @@ def atender_pedido(codigo_pedido):
     if not fue_descontado:
         return False, pedido, mensaje_stock
 
-    # El estado pasa a atendido solo después de que todos los descuentos de
+    # El estado será atendido solo después de que todos los descuentos de
     # inventario terminaron correctamente.
     return actualizar_estado_pedido(codigo_pedido, "Pedido atendido")
 
@@ -215,3 +215,10 @@ def registrar_detalle_pedido(codigo_pedido, detalles):
         CAMPOS_DETALLE_PEDIDO,
     )
     return True, detalles_normalizados, "Detalle de pedido registrado correctamente."
+
+def obtener_pedidos():
+    """Obtener todos los pedidos registrados."""
+    return [
+        convertir_fila_a_pedido(fila)
+        for fila in leer_csv(RUTA_PEDIDOS)
+    ]
