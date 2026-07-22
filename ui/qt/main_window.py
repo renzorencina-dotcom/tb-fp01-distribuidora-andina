@@ -80,5 +80,5 @@ class MainWindow(QMainWindow):
         self.pages.setCurrentIndex(0)
 
     def _mostrar_pedidos(self) -> None:
-        self.dashboard.actualizar_datos()
+        self.pedidos.actualizar_datos()
         self.pages.setCurrentIndex(1)
