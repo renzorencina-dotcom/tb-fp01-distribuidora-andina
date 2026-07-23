@@ -1,5 +1,6 @@
 """Lógica de negocio para productos e inventario."""
 
+from config import RUTA_PRODUCTOS
 from models.producto import Producto
 from services.inventario_service import descontar_stock, sumar_stock
 from utils.csv_manager import (
@@ -8,6 +9,7 @@ from utils.csv_manager import (
     escribir_csv,
     leer_csv,
 )
+from utils.formato import formatear_numero
 from utils.validaciones import (
     id_producto_valido,
     precio_unitario_valido,
@@ -17,7 +19,6 @@ from utils.validaciones import (
 )
 
 
-RUTA_PRODUCTOS = "data/productos.csv"
 CAMPOS_PRODUCTO = [
     "id_producto",
     "descripcion",
@@ -25,16 +26,6 @@ CAMPOS_PRODUCTO = [
     "stock",
     "precio_unitario",
 ]
-
-
-def formatear_numero(valor):
-    """Devuelve números sin decimales innecesarios para guardarlos en CSV."""
-    valor = float(valor)
-
-    if valor.is_integer():
-        return str(int(valor))
-
-    return str(valor)
 
 
 def normalizar_tipo(tipo):

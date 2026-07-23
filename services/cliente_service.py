@@ -4,6 +4,7 @@ El RUC funciona como identificador único del cliente y se usa para registrar,
 consultar y eliminar datos en `data/clientes.csv`.
 """
 
+from config import RUTA_CLIENTES
 from models.cliente import Cliente
 from utils.csv_manager import (
     agregar_fila_csv,
@@ -13,7 +14,6 @@ from utils.csv_manager import (
 from utils.validaciones import ruc_solo_numeros, telefono_solo_numeros, texto_no_vacio
 
 
-RUTA_CLIENTES = "data/clientes.csv"
 CAMPOS_CLIENTE = ["ruc", "razon_social", "telefono", "direccion"]
 
 

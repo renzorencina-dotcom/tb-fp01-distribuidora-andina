@@ -6,7 +6,8 @@ El sistema está organizado por capas simples para separar responsabilidades:
 - `ui/`: interfaces de usuario de consola y gráficas.
 - `services/`: reglas de negocio y coordinación de operaciones.
 - `models/`: representación de entidades del sistema.
-- `utils/`: utilidades compartidas de validación y manejo CSV.
+- `utils/`: utilidades compartidas de validación, formato y manejo CSV.
+- `config.py`: rutas centralizadas de los archivos CSV que usan los servicios.
 - `data/`: archivos CSV de trabajo generados durante la ejecución.
 
 Hay dos puntos de entrada: `main.py` delega el flujo de consola a
@@ -30,17 +31,18 @@ La GUI se encuentra en `ui/qt/` y se compone de:
 - `QStackedWidget`: mantiene las cinco páginas y muestra una a la vez según la
   opción seleccionada en la barra lateral.
 
-En el estado actual, `DashboardPage` es la página Qt que presenta información
-real. Consume exclusivamente funciones de `services/reporte_service.py` para
-mostrar tres tarjetas de resumen —total de pedidos, pedidos pendientes y
-productos con stock bajo— y una tabla con los tres pedidos más recientes. Al
-regresar al Dashboard desde su botón lateral, `MainWindow` solicita que esos
-datos se vuelvan a consultar.
+En el estado actual, `DashboardPage` y `PedidosPage` son las páginas Qt que
+presentan información real. `DashboardPage` consume `services/reporte_service.py`
+para mostrar tres tarjetas de resumen —total de pedidos, pedidos pendientes y
+productos con stock bajo— y una tabla con los tres pedidos más recientes.
+`PedidosPage` consume `services/pedido_service.py` para listar los últimos
+pedidos registrados. Al abrir cada una desde la barra lateral, `MainWindow`
+solicita que sus datos se vuelvan a consultar.
 
-`PedidosPage`, `ClientesPage`, `StockPage` y `ReportesPage` existen dentro del
-`QStackedWidget`, pero actualmente solo muestran un título. La GUI todavía no
-implementa registro, búsqueda, atención, cancelación ni modificación de pedidos
-u otras operaciones de mantenimiento.
+`ClientesPage`, `StockPage` y `ReportesPage` existen dentro del `QStackedWidget`,
+pero actualmente solo muestran un título. La GUI todavía no implementa registro,
+búsqueda, atención, cancelación ni modificación de pedidos u otras operaciones de
+mantenimiento.
 
 ## Modelos
 - `Cliente`: representa a un cliente identificado por RUC.
@@ -87,6 +89,10 @@ CSV. Esto evita repetir lógica de archivos en cada servicio.
 
 `validaciones.py` agrupa reglas de entrada como RUC, teléfono, tipo de producto,
 stock, precio e identificadores de productos.
+
+`formato.py` ofrece `formatear_numero`, que convierte números a texto sin
+decimales innecesarios al escribirlos en los CSV; antes esta función estaba
+duplicada en los servicios de pedidos y productos.
 
 ## Datos
 Los archivos `data/*.csv` son datos de trabajo y no se versionan. Los archivos
