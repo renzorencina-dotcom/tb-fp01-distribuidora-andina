@@ -4,10 +4,12 @@ from services.cliente_service import (
     registrar_cliente,
 )
 from services.pedido_service import (
+    ESTADOS_FINALES,
     actualizar_estado_pedido,
     atender_pedido,
     buscar_pedido_por_codigo,
     codigo_pedido_existe,
+    mensaje_pedido_cerrado,
     registrar_cabecera_pedido,
     registrar_detalle_pedido,
 )
@@ -717,15 +719,11 @@ def interfaz_actualizar_estado_pedido():
 
         mostrar_pedido(pedido)
 
-        if pedido.estado == "Pedido cancelado":
-            print(
-                "No se puede actualizar el estado de este pedido porque ha sido "
-                "cancelado."
-            )
-            return
-
-        if pedido.estado == "Pedido atendido":
-            print("Este pedido ya fue atendido y no puede cambiar de estado.")
+        # Corte anticipado por comodidad: evita pedir un nuevo estado cuando el
+        # pedido ya está cerrado. La regla real vive en pedido_service; aquí solo
+        # se reutiliza su mensaje para no duplicar los estados finales.
+        if pedido.estado in ESTADOS_FINALES:
+            print(mensaje_pedido_cerrado(pedido.estado))
             return
 
         nuevo_estado = pedir_nuevo_estado_pedido()

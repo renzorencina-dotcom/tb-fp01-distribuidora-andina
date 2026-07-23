@@ -4,13 +4,12 @@
 `detalle_pedidos.csv` almacena los productos solicitados por cada pedido.
 """
 
+from config import RUTA_DETALLE_PEDIDOS, RUTA_PEDIDOS
 from models.pedido import DetallePedido, Pedido
 from services.producto_service import descontar_stock_por_detalles
 from utils.csv_manager import agregar_fila_csv, buscar_por_campo, escribir_csv, leer_csv
+from utils.formato import formatear_numero
 
-
-RUTA_PEDIDOS = "data/pedidos.csv"
-RUTA_DETALLE_PEDIDOS = "data/detalle_pedidos.csv"
 
 CAMPOS_PEDIDO = [
     "codigo_pedido",
@@ -28,15 +27,9 @@ CAMPOS_DETALLE_PEDIDO = [
     "subtotal",
 ]
 
-
-def formatear_numero(valor):
-    """Formatea cantidades para guardarlas en CSV sin decimales innecesarios."""
-    valor = float(valor)
-
-    if valor.is_integer():
-        return str(int(valor))
-
-    return str(valor)
+# Un pedido en estado final queda cerrado: ya descontó inventario (atendido) o
+# fue anulado (cancelado), por lo que no debe volver a cambiar de estado.
+ESTADOS_FINALES = ("Pedido atendido", "Pedido cancelado")
 
 
 def convertir_fila_a_pedido(fila):
@@ -116,8 +109,21 @@ def codigo_pedido_existe(codigo_pedido):
     return buscar_pedido_por_codigo(codigo_pedido) is not None
 
 
+def mensaje_pedido_cerrado(estado):
+    """Explica por qué un pedido en estado final ya no admite cambios."""
+    if estado == "Pedido atendido":
+        return "Este pedido ya fue atendido y no puede cambiar de estado."
+
+    return "No se puede actualizar el estado de este pedido porque ha sido cancelado."
+
+
 def actualizar_estado_pedido(codigo_pedido, nuevo_estado):
-    """Actualiza solo el estado de la cabecera del pedido."""
+    """Actualiza solo el estado de la cabecera del pedido.
+
+    La regla de que un pedido en estado final (atendido o cancelado) queda
+    cerrado vive aquí, en la capa de negocio, para que cualquier interfaz
+    (consola o Qt) quede protegida sin repetir el chequeo.
+    """
     pedidos = leer_csv(RUTA_PEDIDOS)
     pedido_actualizado = None
 
@@ -125,6 +131,18 @@ def actualizar_estado_pedido(codigo_pedido, nuevo_estado):
     # reescribe el archivo completo con el estado modificado.
     for pedido in pedidos:
         if pedido.get("codigo_pedido") == codigo_pedido:
+            estado_actual = pedido.get("estado") or "Pedido registrado"
+
+            # Un pedido cerrado no puede reabrirse: cambiarlo dejaría el
+            # inventario inconsistente (por ejemplo, cancelar un pedido ya
+            # atendido sin devolver el stock que se descontó).
+            if estado_actual in ESTADOS_FINALES:
+                return (
+                    False,
+                    convertir_fila_a_pedido(pedido),
+                    mensaje_pedido_cerrado(estado_actual),
+                )
+
             pedido["estado"] = nuevo_estado
             pedido_actualizado = convertir_fila_a_pedido(pedido)
             break

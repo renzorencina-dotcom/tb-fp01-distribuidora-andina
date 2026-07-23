@@ -1,11 +1,8 @@
 """Servicios de lectura y acumulación para reportes del sistema."""
 
+from config import RUTA_DETALLE_PEDIDOS, RUTA_PEDIDOS, RUTA_PRODUCTOS
 from utils.csv_manager import leer_csv
 
-
-RUTA_PEDIDOS = "data/pedidos.csv"
-RUTA_DETALLE_PEDIDOS = "data/detalle_pedidos.csv"
-RUTA_PRODUCTOS = "data/productos.csv"
 
 ESTADOS_PEDIDO = [
     "Pedido registrado",
@@ -31,7 +28,7 @@ def convertir_a_numero(valor):
         return 0
 
 
-def formatear_numero(valor):
+def formatear_para_reporte(valor):
     """Devuelve enteros sin decimal y decimales redondeados para mostrar reportes."""
     valor = float(valor)
 
@@ -97,7 +94,7 @@ def obtener_productos_bajo_stock(limite=5):
                     "id_producto": producto.get("id_producto", ""),
                     "descripcion": producto.get("descripcion", ""),
                     "tipo": producto.get("tipo", ""),
-                    "stock": formatear_numero(stock),
+                    "stock": formatear_para_reporte(stock),
                     "precio_unitario": convertir_a_numero(
                         producto.get("precio_unitario")
                     ),
@@ -142,7 +139,7 @@ def obtener_producto_mas_solicitado():
         productos_solicitados.values(),
         key=lambda producto: producto["cantidad_total"],
     )
-    producto_mas_solicitado["cantidad_total"] = formatear_numero(
+    producto_mas_solicitado["cantidad_total"] = formatear_para_reporte(
         producto_mas_solicitado["cantidad_total"]
     )
 
