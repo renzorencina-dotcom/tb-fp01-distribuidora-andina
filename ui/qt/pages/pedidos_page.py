@@ -82,26 +82,26 @@ class PedidosPage(QWidget):
 
         controles_layout = QHBoxLayout(controles)
 
-        control_buscador = QLineEdit()
-        control_buscador.setMinimumHeight(26)
-        control_buscador.setObjectName("controlBuscador")
-        control_buscador.setPlaceholderText("Buscar por código, RUC o cliente")
+        self.control_buscador = QLineEdit()
+        self.control_buscador.setMinimumHeight(26)
+        self.control_buscador.setObjectName("controlBuscador")
+        self.control_buscador.setPlaceholderText("Buscar por código, RUC o cliente")
 
-        control_filtro = QComboBox()
-        control_filtro.setObjectName("controlFiltro")
-        control_filtro.addItems([
+        self.control_filtro = QComboBox()
+        self.control_filtro.setObjectName("controlFiltro")
+        self.control_filtro.addItems([
             "Todos los estados",
             "Registrados",
             "Atendidos",
             "Cancelados"
         ])
 
-        control_nuevo = QPushButton("Nuevo pedido")
-        control_nuevo.setObjectName("controlNuevo")
+        self.control_nuevo = QPushButton("Nuevo pedido")
+        self.control_nuevo.setObjectName("controlNuevo")
 
-        controles_layout.addWidget(control_buscador,1)
-        controles_layout.addWidget(control_filtro)
-        controles_layout.addWidget(control_nuevo)
+        controles_layout.addWidget(self.control_buscador,1)
+        controles_layout.addWidget(self.control_filtro)
+        controles_layout.addWidget(self.control_nuevo)
 
         return controles
 
@@ -129,13 +129,36 @@ class PedidosPage(QWidget):
                 border-width: 1px;
                 border-color: white;
             }
+            QTableWidget#pedidosTable {
+                background-color: palette(base);
+                alternate-background-color: palette(alternate-base);
+                color: palette(text);
+                border: 1px solid palette(mid);
+                border-radius: 8px;
+                padding: 0;
+                selection-background-color: palette(highlight);
+                selection-color: palette(highlighted-text);
+            }
+            QTableWidget#pedidosTable::item {
+                border: none;
+                padding: 0 10px;
+            }
+            QHeaderView::section {
+                background-color: palette(button);
+                color: palette(button-text);
+                border: none;
+                border-bottom: 1px solid palette(mid);
+                padding: 8px 10px;
+                font-size: 13px;
+                font-weight: 600;
+            }
             """
         )
 
     def actualizar_datos(self) -> None:
         pedidos_lista = obtener_pedidos()
 
-        pedidos_mostrados = pedidos_lista[-5:]
+        pedidos_mostrados = pedidos_lista[-6:]
         self.pedidos_lista.setRowCount(len(pedidos_mostrados))
 
         for fila, pedido in enumerate(reversed(pedidos_mostrados)):
