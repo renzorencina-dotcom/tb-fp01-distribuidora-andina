@@ -39,8 +39,11 @@ def escribir_csv(ruta, datos, campos):
 
     # Se sobrescribe el archivo completo porque las operaciones de actualizar
     # o eliminar trabajan con una lista ya modificada en memoria.
+    # lineterminator="\n" fuerza saltos de línea LF: por defecto csv escribe
+    # CRLF, lo que dejaba los archivos de data/ con un estilo distinto al de
+    # las plantillas de data/ejemplos.
     with open(ruta, mode="w", newline="", encoding="utf-8") as archivo:
-        escritor = csv.DictWriter(archivo, fieldnames=campos)
+        escritor = csv.DictWriter(archivo, fieldnames=campos, lineterminator="\n")
         escritor.writeheader()
         escritor.writerows(datos)
 
