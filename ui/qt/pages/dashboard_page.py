@@ -82,8 +82,9 @@ class DashboardPage(QWidget):
         self.pedidos_recientes.setColumnWidth(1, 130)
         self.pedidos_recientes.setColumnWidth(3, 190)
 
-        self.pedidos_recientes.setMinimumHeight(210)
-        self.pedidos_recientes.setMaximumHeight(400)
+        self.pedidos_recientes.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
         self.pedidos_recientes.verticalHeader().setVisible(False)
         self.pedidos_recientes.verticalHeader().setDefaultSectionSize(44)
 
@@ -108,6 +109,7 @@ class DashboardPage(QWidget):
         texto_label = QLabel(texto)
         texto_label.setObjectName("summaryLabel")
 
+        layout.addStretch()
         layout.addWidget(valor_label)
         layout.addWidget(texto_label)
         layout.addStretch()
@@ -138,8 +140,8 @@ class DashboardPage(QWidget):
                 border-radius: 12px;
             }
             QLabel#summaryValue {
-                color: palette(text);
-                font-size: 28px;
+                color: #3b82f6;
+                font-size: 32px;
                 font-weight: 700;
             }
             QLabel#summaryLabel {
@@ -149,17 +151,22 @@ class DashboardPage(QWidget):
             }
             QTableWidget#recentOrdersTable {
                 background-color: palette(base);
-                alternate-background-color: palette(alternate-base);
+                alternate-background-color: palette(base);
                 color: palette(text);
                 border: 1px solid palette(mid);
                 border-radius: 10px;
                 padding: 0;
-                selection-background-color: palette(highlight);
-                selection-color: palette(highlighted-text);
+                selection-background-color: #2f5c9e;
+                selection-color: #ffffff;
             }
             QTableWidget#recentOrdersTable::item {
                 border: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
                 padding: 0 10px;
+            }
+            QTableWidget#recentOrdersTable::item:selected {
+                background-color: #2f5c9e;
+                color: #ffffff;
             }
             QHeaderView::section {
                 background-color: palette(button);
@@ -173,6 +180,17 @@ class DashboardPage(QWidget):
             """
         )
 
+    def _ajustar_altura_tabla(self) -> None:
+        """Ajusta la altura de la tabla al número de filas mostradas."""
+        tabla = self.pedidos_recientes
+        alto_encabezado = max(
+            tabla.horizontalHeader().height(),
+            tabla.horizontalHeader().minimumHeight(),
+        )
+        alto_filas = tabla.verticalHeader().defaultSectionSize() * tabla.rowCount()
+        marco = 2 * tabla.frameWidth()
+        tabla.setFixedHeight(alto_encabezado + alto_filas + marco)
+
     def actualizar_datos(self) -> None:
         reporte = obtener_reporte_general_pedidos()
         stock = obtener_productos_bajo_stock()
@@ -184,7 +202,7 @@ class DashboardPage(QWidget):
 
         self.stock_bajo_label.setText(str(len(stock)))
 
-        pedidos_mostrados = pedidos_recientes[-3:]
+        pedidos_mostrados = pedidos_recientes[-8:]
         self.pedidos_recientes.setRowCount(len(pedidos_mostrados))
 
         for fila, pedido in enumerate(reversed(pedidos_mostrados)):
@@ -206,3 +224,5 @@ class DashboardPage(QWidget):
 
                 item.setTextAlignment(alineacion)
                 self.pedidos_recientes.setItem(fila, columna, item)
+
+        self._ajustar_altura_tabla()
